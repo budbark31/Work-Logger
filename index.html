@@ -1,78 +1,236 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Work Time Logger</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Ultimate Work Logger</title>
   <style>
-    body { font-family:Arial; background:#f2f2f2; padding:20px; margin:0; }
-    h1 { text-align:center; font-size:1.6em; }
-    .card { background:white; border-radius:14px; box-shadow:0 4px 8px rgba(0,0,0,0.1); padding:20px; margin:20px 0; }
-    .button { display:block; width:100%; padding:15px; margin:10px 0; font-size:1.2em; font-weight:bold; border:none; border-radius:10px; color:white; background-color:#007bff; cursor:pointer; }
-    .button:active { background-color:#0056b3; }
-    #log,#timer,#status { white-space:pre-wrap; font-family:monospace; font-size:1rem; margin-top:10px; }
-    #status { font-weight:bold; color:green; margin-bottom:15px; }
-    #timer { font-size:1.2em; font-weight:bold; color:#1a237e; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+    body { font-family:'Inter', sans-serif; margin:0; padding:20px; background:#f2f2f2; }
+    h1, h2 { text-align:center; }
+    .card { background:#fff; border-radius:14px; box-shadow:0 4px 8px rgba(0,0,0,0.1); padding:20px; margin:15px 0; }
+    .btn { display:inline-block; margin:5px; padding:10px 15px; font-weight:600; border:none; border-radius:8px; cursor:pointer; }
+    .btn-blue { background:#007bff; color:#fff; }
+    .btn-red { background:#dc3545; color:#fff; }
+    .btn-gray { background:#6c757d; color:#fff; }
+    .btn-green { background:#28a745; color:#fff; }
+    #log table { width:100%; border-collapse:collapse; }
+    #log th, #log td { padding:8px; border-bottom:1px solid #ddd; text-align:left; }
+    #log th { background:#e9ecef; }
+    #status { text-align:center; margin-bottom:10px; font-weight:600; }
+    .editField { width:100%; }
+    #settings input, #settings label { display:block; margin:8px 0; }
   </style>
 </head>
 <body>
-  <h1>Work Logger</h1>
-  <div class="card">
-    <div id="status">Ready</div>
-    <button class="button" onclick="startShift()">Start Shift</button>
-    <button class="button" onclick="stopShift()">Stop Shift</button>
+
+  <h1>Work Logger • Premium</h1>
+
+  <div id="status"></div>
+
+  <div class="card" id="mainControls">
+    <button class="btn btn-blue" onclick="startShift()">Start Shift</button>
+    <button class="btn btn-blue" onclick="stopShift()">Stop Shift</button>
+    <button class="btn btn-gray" onclick="manualEntry()">+ Manual Entry</button>
+    <button class="btn btn-gray" onclick="openSettings()">⚙️ Settings</button>
     <div id="timer"></div>
   </div>
-  <div class="card">
+
+  <div class="card" id="log">
     <h2>Shift History</h2>
-    <div id="log">Loading log...</div>
+    Loading…
   </div>
+
+  <button class="btn btn-green" onclick="exportText()">Export TXT</button>
+  <button class="btn btn-green" onclick="exportCSV()">Export CSV</button>
+  <button class="btn btn-green" onclick="copyAll()">Copy All</button>
+
+  <div class="card" id="settings" style="display:none;">
+    <h2>Settings</h2>
+    <label>Default Hourly Rate ($):<input type="number" id="rate" value="0"/></label>
+    <label><input type="checkbox" id="darkMode"/> Dark Mode</label>
+    <button class="btn btn-red" onclick="clearAll()">Clear All Logs</button>
+    <button class="btn btn-gray" onclick="closeSettings()">Done</button>
+  </div>
+
   <script>
-    let shift={},timerInterval=null;
-    function formatTime(d){return new Date(d).toTimeString().slice(0,5);}
-    function formatDate(d){return new Date(d).toISOString().slice(0,10);}
-    function updateTimer(){
-      if(!shift.start)return;
-      const now=new Date(),mins=Math.floor((now-new Date(shift.start))/60000);
-      const hrs=Math.floor(mins/60),rem=mins%60;
-      document.getElementById('timer').textContent = `⏱️ Current shift: ${hrs}h ${rem}m`;
+    // Core
+    const STORAGE = { shiftLog:'shiftLog', current:'currentShift', settings:'settings' };
+
+    function loadSettings(){
+      const s = JSON.parse(localStorage.getItem(STORAGE.settings)||'{}');
+      document.getElementById('rate').value = s.rate||0;
+      document.getElementById('darkMode').checked = s.dark||false;
+      toggleDark(s.dark);
     }
-    function showStatus(msg,c='green'){const s=document.getElementById('status');s.textContent=msg;s.style.color=c;}
-    function startShift(){
-      const site=prompt("Enter job site:");if(!site)return;
-      shift={date:formatDate(new Date()),site, start:new Date().toISOString()};
-      localStorage.setItem('currentShift',JSON.stringify(shift));
-      if(timerInterval)clearInterval(timerInterval);
-      timerInterval=setInterval(updateTimer,60000);
-      updateTimer();
-      showStatus(`✅ Work started at ${formatTime(shift.start)} at "${site}"`);
+    function saveSettings(){
+      localStorage.setItem(STORAGE.settings, JSON.stringify({
+        rate: +document.getElementById('rate').value,
+        dark: document.getElementById('darkMode').checked
+      }));
     }
-    function stopShift(){
-      const c=localStorage.getItem('currentShift');if(!c){showStatus("⚠️ No shift in progress",'red'); return;}
-      shift=JSON.parse(c);
-      const end=new Date(),note=prompt("Enter notes (optional):")||'';
-      const mins=Math.floor((end-new Date(shift.start))/60000),hrs=Math.floor(mins/60),rem=mins%60,
-            total=`${hrs}h ${rem}m`,
-            logLine=`${shift.date} | Site: ${shift.site} | Start: ${formatTime(shift.start)} | End: ${formatTime(end)} | Total: ${total} | Notes: ${note}`,
-            prev=localStorage.getItem('shiftLog')||'';
-      localStorage.setItem('shiftLog',logLine+'\n'+prev);
-      localStorage.removeItem('currentShift');
-      clearInterval(timerInterval);
-      document.getElementById('timer').textContent='';
-      showStatus(`✅ Work ended. Logged ${total}.`);
-      loadLog();
+    function toggleDark(on){
+      document.body.style.background = on ? '#222' : '#f2f2f2';
+      document.body.style.color = on ? '#eee' : '#222';
     }
+
+    // Shift Logic
+    let shift = null, timerInterval = null;
+
+    function formatDate(d){return d.toISOString().slice(0,10);}
+    function formatTime(d){return d.toTimeString().slice(0,5);}
+    function persistLog(log){localStorage.setItem(STORAGE.shiftLog, JSON.stringify(log));}
     function loadLog(){
-      const log=localStorage.getItem('shiftLog')||'No shifts logged yet.';
-      document.getElementById('log').textContent=log;
-      const s=localStorage.getItem('currentShift');
-      if(s){
-        shift=JSON.parse(s);
-        updateTimer();
-        timerInterval=setInterval(updateTimer,60000);
-        showStatus(`✅ Resumed shift started at ${formatTime(shift.start)}`);
+      const raw = JSON.parse(localStorage.getItem(STORAGE.shiftLog)||'[]');
+      renderLog(raw);
+      const cur = localStorage.getItem(STORAGE.current);
+      if(cur){
+        shift = JSON.parse(cur);
+        resumeTimer();
       }
     }
-    window.onload=loadLog;
+
+    function startShift(){
+      const site = prompt("Enter job site:"); if(!site) return;
+      shift = { id: Date.now(), date: formatDate(new Date()), site, start: new Date().toISOString(), end:'', total:'', notes:'', paid:false, tag:'', manual:false };
+      localStorage.setItem(STORAGE.current, JSON.stringify(shift));
+      resumeTimer();
+      showStatus(`Started at ${formatTime(new Date(shift.start))}`, 'green');
+    }
+
+    function resumeTimer(){
+      document.getElementById('timer').textContent = '⏱️ Timer: calculating…';
+      if(timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(updateTimer, 60000);
+      updateTimer();
+    }
+
+    function updateTimer(){
+      if(!shift) return;
+      const mins = Math.floor((new Date() - new Date(shift.start))/60000);
+      const hrs = Math.floor(mins/60), rem = mins%60;
+      document.getElementById('timer').textContent = `⏱️ Current shift: ${hrs}h ${rem}m`;
+    }
+
+    function stopShift(){
+      if(!shift) return showStatus('No shift in progress', 'red');
+      const note = prompt("Notes?")||'';
+      shift.end = new Date().toISOString();
+      const mins = Math.floor((new Date(shift.end)-new Date(shift.start))/60000);
+      const hrs = Math.floor(mins/60), rem = mins%60;
+      shift.total = `${hrs}h ${rem}m`; shift.notes = note;
+      const log = JSON.parse(localStorage.getItem(STORAGE.shiftLog)||'[]');
+      log.unshift(shift);
+      persistLog(log);
+      localStorage.removeItem(STORAGE.current);
+      shift = null;
+      clearInterval(timerInterval);
+      document.getElementById('timer').textContent = '';
+      renderLog(log);
+      showStatus(`Logged ${hrs}h ${rem}m`, 'green');
+    }
+
+    function manualEntry(){
+      const date = prompt("Date YYYY-MM-DD:"); if(!date) return;
+      const site = prompt("Site:"); if(!site) return;
+      const start = prompt("Start time (HH:MM):"); if(!start) return;
+      const end = prompt("End time (HH:MM):"); if(!end) return;
+      const note = prompt("Notes?")||'';
+      const s = new Date(`${date}T${start}:00`);
+      const e = new Date(`${date}T${end}:00`);
+      const mins = Math.floor((e-s)/60000);
+      const hrs = Math.floor(mins/60), rem = mins%60;
+      const ent = {id:Date.now(), date, site, start, end, total:`${hrs}h ${rem}m`, notes:note, paid:false, tag:'', manual:true};
+      const log = JSON.parse(localStorage.getItem(STORAGE.shiftLog)||'[]');
+      log.unshift(ent);
+      persistLog(log);
+      renderLog(log);
+    }
+
+    // Render + Edit
+    function renderLog(log){
+      const rate = +document.getElementById('rate').value;
+      let html = `<table><tr><th>Date</th><th>Site</th><th>Start</th><th>End</th><th>Total</th><th>Notes</th><th>Paid</th><th>Earnings</th><th>Actions</th></tr>`;
+      log.forEach((e,i)=>{
+        const earn = rate ? ((parseInt(e.total)*60 + parseInt(e.total.split('h ')[1])) ?(Number(e.total.split('h')[0])*rate + 0):0).toFixed(2) : '';
+        html += `<tr>
+          <td>${e.date}</td><td>${e.site}</td><td>${e.start}</td><td>${e.end}</td><td>${e.total}</td><td>${e.notes}</td>
+          <td><input type="checkbox" ${e.paid?'checked':''} onchange="togglePaid(${e.id})"></td><td>${earn}</td>
+          <td>
+            <button class="btn btn-gray" onclick="editEntry(${e.id})">Edit</button>
+            <button class="btn btn-red" onclick="deleteEntry(${e.id})">Delete</button>
+          </td></tr>`;
+      });
+      html += '</table>';
+      document.getElementById('log').innerHTML = html;
+    }
+    function togglePaid(id){
+      const log = JSON.parse(localStorage.getItem(STORAGE.shiftLog)||'[]');
+      const e = log.find(x=>x.id===id); e.paid = !e.paid;
+      persistLog(log); renderLog(log);
+    }
+    function deleteEntry(id){
+      const log = JSON.parse(localStorage.getItem(STORAGE.shiftLog)||'[]').filter(x=>x.id!==id);
+      persistLog(log); renderLog(log);
+    }
+    function editEntry(id){
+      const log = JSON.parse(localStorage.getItem(STORAGE.shiftLog)||'[]');
+      const e = log.find(x=>x.id===id);
+      const date = prompt("Date:", e.date), site=prompt("Site:", e.site),
+            start=prompt("Start HH:MM:",e.start), end=prompt("End HH:MM:",e.end),
+            notes=prompt("Notes:", e.notes)||'';
+      e.date=date;e.site=site;e.start=start;e.end=end;e.notes=notes;
+      const s=new Date(`${date}T${start}:00`), en=new Date(`${date}T${end}:00`);
+      const mins=Math.max(0,Math.floor((en-s)/60000)), hrs=Math.floor(mins/60), rem=mins%60;
+      e.total=`${hrs}h ${rem}m`;
+      persistLog(log); renderLog(log);
+    }
+
+    // Export
+    function exportText(){
+      const txt = (JSON.parse(localStorage.getItem(STORAGE.shiftLog)||'[]')
+        .map(e=>`${e.date}|${e.site}|${e.start}|${e.end}|${e.total}|${e.notes}|${e.paid?'paid':'unpaid'}`)
+        .join('\n'));
+      download('shiftLog.txt', txt);
+    }
+    function exportCSV(){
+      const csv = ['date,site,start,end,total,notes,paid']
+        .concat(JSON.parse(localStorage.getItem(STORAGE.shiftLog)||'[]').map(e=>
+          `"${e.date}","${e.site}","${e.start}","${e.end}","${e.total}","${e.notes.replace(/"/g,'""')}","${e.paid?'1':'0'}"`))
+        .join('\n');
+      download('shiftLog.csv', csv);
+    }
+    function download(fn, data){
+      const a=document.createElement('a');
+      a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(data);
+      a.download=fn; document.body.appendChild(a); a.click(); a.remove();
+    }
+    function copyAll(){
+      const txt = document.getElementById('log').innerText;
+      navigator.clipboard.writeText(txt).then(()=>{
+        showStatus('Copied log to clipboard', 'green');
+      });
+    }
+
+    // Manual tools, settings
+    function clearAll(){
+      if(confirm('Erase all logs?')) {
+        localStorage.removeItem(STORAGE.shiftLog);
+        renderLog([]);
+      }
+    }
+    function openSettings(){
+      loadSettings(); document.getElementById('settings').style.display='block';
+    }
+    function closeSettings(){
+      saveSettings(); loadSettings(); document.getElementById('settings').style.display='none'; renderLog(JSON.parse(localStorage.getItem(STORAGE.shiftLog)||'[]'));
+    }
+
+    // Init
+    window.onload = () => {
+      loadSettings();
+      loadLog();
+    };
   </script>
 </body>
 </html>
