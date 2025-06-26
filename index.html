@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Work Time Logger</title>
+  <style>
+    body { font-family:Arial; background:#f2f2f2; padding:20px; margin:0; }
+    h1 { text-align:center; font-size:1.6em; }
+    .card { background:white; border-radius:14px; box-shadow:0 4px 8px rgba(0,0,0,0.1); padding:20px; margin:20px 0; }
+    .button { display:block; width:100%; padding:15px; margin:10px 0; font-size:1.2em; font-weight:bold; border:none; border-radius:10px; color:white; background-color:#007bff; cursor:pointer; }
+    .button:active { background-color:#0056b3; }
+    #log,#timer,#status { white-space:pre-wrap; font-family:monospace; font-size:1rem; margin-top:10px; }
+    #status { font-weight:bold; color:green; margin-bottom:15px; }
+    #timer { font-size:1.2em; font-weight:bold; color:#1a237e; }
+  </style>
+</head>
+<body>
+  <h1>Work Logger</h1>
+  <div class="card">
+    <div id="status">Ready</div>
+    <button class="button" onclick="startShift()">Start Shift</button>
+    <button class="button" onclick="stopShift()">Stop Shift</button>
+    <div id="timer"></div>
+  </div>
+  <div class="card">
+    <h2>Shift History</h2>
+    <div id="log">Loading log...</div>
+  </div>
+  <script>
+    let shift={},timerInterval=null;
+    function formatTime(d){return new Date(d).toTimeString().slice(0,5);}
+    function formatDate(d){return new Date(d).toISOString().slice(0,10);}
+    function updateTimer(){
+      if(!shift.start)return;
+      const now=new Date(),mins=Math.floor((now-new Date(shift.start))/60000);
+      const hrs=Math.floor(mins/60),rem=mins%60;
+      document.getElementById('timer').textContent = `⏱️ Current shift: ${hrs}h ${rem}m`;
+    }
+    function showStatus(msg,c='green'){const s=document.getElementById('status');s.textContent=msg;s.style.color=c;}
+    function startShift(){
+      const site=prompt("Enter job site:");if(!site)return;
+      shift={date:formatDate(new Date()),site, start:new Date().toISOString()};
+      localStorage.setItem('currentShift',JSON.stringify(shift));
+      if(timerInterval)clearInterval(timerInterval);
+      timerInterval=setInterval(updateTimer,60000);
+      updateTimer();
+      showStatus(`✅ Work started at ${formatTime(shift.start)} at "${site}"`);
+    }
+    function stopShift(){
+      const c=localStorage.getItem('currentShift');if(!c){showStatus("⚠️ No shift in progress",'red'); return;}
+      shift=JSON.parse(c);
+      const end=new Date(),note=prompt("Enter notes (optional):")||'';
+      const mins=Math.floor((end-new Date(shift.start))/60000),hrs=Math.floor(mins/60),rem=mins%60,
+            total=`${hrs}h ${rem}m`,
+            logLine=`${shift.date} | Site: ${shift.site} | Start: ${formatTime(shift.start)} | End: ${formatTime(end)} | Total: ${total} | Notes: ${note}`,
+            prev=localStorage.getItem('shiftLog')||'';
+      localStorage.setItem('shiftLog',logLine+'\n'+prev);
+      localStorage.removeItem('currentShift');
+      clearInterval(timerInterval);
+      document.getElementById('timer').textContent='';
+      showStatus(`✅ Work ended. Logged ${total}.`);
+      loadLog();
+    }
+    function loadLog(){
+      const log=localStorage.getItem('shiftLog')||'No shifts logged yet.';
+      document.getElementById('log').textContent=log;
+      const s=localStorage.getItem('currentShift');
+      if(s){
+        shift=JSON.parse(s);
+        updateTimer();
+        timerInterval=setInterval(updateTimer,60000);
+        showStatus(`✅ Resumed shift started at ${formatTime(shift.start)}`);
+      }
+    }
+    window.onload=loadLog;
+  </script>
+</body>
+</html>
