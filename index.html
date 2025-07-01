@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Work Logger</title>
-  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="apple-touch-icon" href="Electrical-Transparent-Background.png">
   <style>
     :root {
       --primary-bg: #f4f4f4;
@@ -45,40 +45,13 @@
     .settings label { display: block; margin-bottom: 10px; }
     .settings input[type="number"], .settings input[type="checkbox"] { margin-right: 5px; }
 
-    /* --- Mobile Responsive Table CSS --- */
     @media screen and (max-width: 600px) {
-      table thead {
-        display: none; /* Hide table headers */
-      }
-      table, table tbody, table tr, table td {
-        display: block;
-        width: 100%;
-      }
-      table tr {
-        background: var(--card-bg);
-        border-radius: 12px;
-        margin-bottom: 15px;
-        box-shadow: 0 2px 4px var(--shadow-color);
-        border: 1px solid var(--border-color);
-      }
-      table td {
-        text-align: right; /* Align data to the right */
-        padding-left: 50%; /* Create space for the label */
-        position: relative;
-        border-bottom: 1px solid var(--border-color);
-      }
-      table td:last-child {
-        border-bottom: none; /* Remove border on last cell of the card */
-      }
-      table td::before {
-        content: attr(data-label); /* Use data-label for the text */
-        position: absolute;
-        left: 15px;
-        width: calc(50% - 30px);
-        text-align: left;
-        font-weight: bold;
-        color: var(--text-color);
-      }
+      table thead { display: none; }
+      table, table tbody, table tr, table td { display: block; width: 100%; }
+      table tr { background: var(--card-bg); border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 4px var(--shadow-color); border: 1px solid var(--border-color); }
+      table td { text-align: right; padding-left: 50%; position: relative; border-bottom: 1px solid var(--border-color); }
+      table td:last-child { border-bottom: none; }
+      table td::before { content: attr(data-label); position: absolute; left: 15px; width: calc(50% - 30px); text-align: left; font-weight: bold; color: var(--text-color); }
     }
   </style>
 </head>
@@ -110,46 +83,32 @@
   </div>
 
   <script>
+    // --- ⬇️ PASTE YOUR GOOGLE SCRIPT URL HERE ⬇️ ---
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyl1OzSYlgK2MR0JyVL9zMMQF427tCGDweYFirJ0jaGncxO3VSRD1rz5YU_BlJPN2CYg/exec';
+    // --- ⬆️ PASTE YOUR GOOGLE SCRIPT URL HERE ⬆️ ---
+
     let currentShift = null;
     let shiftLog = [];
     let settings = {};
 
-    // --- FIX: Safely load all data from localStorage on start ---
     function loadData() {
       try {
         const storedShift = localStorage.getItem('currentShift');
-        if (storedShift) {
-          currentShift = JSON.parse(storedShift);
-        }
-      } catch (e) {
-        console.error("Could not parse currentShift data, resetting.", e);
-        currentShift = null;
-      }
+        if (storedShift) currentShift = JSON.parse(storedShift);
+      } catch (e) { console.error("Could not parse currentShift data, resetting.", e); currentShift = null; }
 
       try {
         const storedLog = localStorage.getItem('shiftLog');
         if (storedLog) {
-          // Ensure it's an array, otherwise default to empty
           const parsedLog = JSON.parse(storedLog);
           shiftLog = Array.isArray(parsedLog) ? parsedLog : [];
         }
-      } catch (e) {
-        console.error("Could not parse shiftLog data, resetting.", e);
-        alert("Your saved log data could not be read. It may be corrupt. Starting with a fresh log.");
-        shiftLog = [];
-      }
+      } catch (e) { console.error("Could not parse shiftLog data, resetting.", e); shiftLog = []; }
       
       try {
         const storedSettings = localStorage.getItem('workLoggerSettings');
-        if(storedSettings) {
-            settings = JSON.parse(storedSettings);
-        } else {
-            settings = { hourlyRate: 0, darkMode: false };
-        }
-      } catch (e) {
-        console.error("Could not parse settings, resetting.", e);
-        settings = { hourlyRate: 0, darkMode: false };
-      }
+        settings = storedSettings ? JSON.parse(storedSettings) : { hourlyRate: 0, darkMode: false };
+      } catch (e) { console.error("Could not parse settings, resetting.", e); settings = { hourlyRate: 0, darkMode: false }; }
     }
     
     function applySettings() {
@@ -167,7 +126,7 @@
     function saveSettings() {
         settings.hourlyRate = document.getElementById('hourlyRate').value;
         localStorage.setItem('workLoggerSettings', JSON.stringify(settings));
-        renderShiftLog(); // Re-render to update earnings
+        renderShiftLog();
     }
 
     function saveLogs() {
@@ -178,21 +137,33 @@
       localStorage.setItem('currentShift', JSON.stringify(currentShift));
     }
 
+    // --- NEW: Function to send data to Google Sheets ---
+    async function syncShiftToGoogle(shiftData) {
+      if (!SCRIPT_URL.startsWith('https://')) {
+        console.warn('Google Script URL is not set. Skipping sync.');
+        return;
+      }
+
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'cors', // Required for cross-origin requests
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(shiftData)
+        });
+        const result = await response.json();
+        console.log('Google Sync Success:', result);
+      } catch (error) {
+        console.error('Google Sync Error:', error);
+        alert('Failed to sync shift to Google Sheet. Check console for details.');
+      }
+    }
+
     function startShift() {
       if (currentShift) return alert("Shift already in progress.");
       const site = prompt("Enter job site:");
       if (!site) return;
-      currentShift = {
-        id: Date.now(),
-        date: new Date().toISOString().split('T')[0],
-        site,
-        start: new Date().toISOString(),
-        end: null,
-        total: null,
-        notes: '',
-        paid: false,
-        tag: ''
-      };
+      currentShift = { id: Date.now(), date: new Date().toISOString().split('T')[0], site, start: new Date().toISOString(), end: null, total: null, notes: '', paid: false, tag: '' };
       saveCurrent();
       renderCurrentShiftStatus();
     }
@@ -207,9 +178,10 @@
       currentShift.total = `${h}h ${m}m`;
       currentShift.notes = prompt("Add notes for this shift:", "") || '';
       shiftLog.unshift(currentShift);
+      saveLogs();
+      syncShiftToGoogle(currentShift); // --- MODIFIED: Sync on stop
       currentShift = null;
       saveCurrent();
-      saveLogs();
       renderCurrentShiftStatus();
       renderShiftLog();
     }
@@ -233,20 +205,10 @@
       const h = Math.floor(mins / 60);
       const m = mins % 60;
       
-      const entry = {
-        id: Date.now(),
-        date,
-        site,
-        start: s.toISOString(),
-        end: e.toISOString(),
-        total: `${h}h ${m}m`,
-        notes: prompt("Notes?") || '',
-        paid: false,
-        tag: '',
-        manual: true
-      };
+      const entry = { id: Date.now(), date, site, start: s.toISOString(), end: e.toISOString(), total: `${h}h ${m}m`, notes: prompt("Notes?") || '', paid: false, tag: '', manual: true };
       shiftLog.unshift(entry);
       saveLogs();
+      syncShiftToGoogle(entry); // --- MODIFIED: Sync on manual entry
       renderShiftLog();
     }
     
@@ -266,7 +228,6 @@
       
       let html = '<table><thead><tr><th>Date</th><th>Site</th><th>Time</th><th>Total</th><th>Paid</th><th>Earnings</th><th>Actions</th></tr></thead><tbody>';
       shiftLog.forEach(s => {
-        // --- FIX: Robust earnings calculation ---
         let totalHours = 0;
         if (s.total) {
             const h_match = s.total.match(/(\d+)h/);
@@ -298,15 +259,11 @@
     function editEntry(id) {
         const entry = shiftLog.find(e => e.id === id);
         if (!entry) return;
-        
-        const newSite = prompt("Edit Site:", entry.site);
-        const newNotes = prompt("Edit Notes:", entry.notes);
-        
-        if (newSite !== null) entry.site = newSite;
-        if (newNotes !== null) entry.notes = newNotes;
-
+        entry.site = prompt("Edit Site:", entry.site) || entry.site;
+        entry.notes = prompt("Edit Notes:", entry.notes) || entry.notes;
         saveLogs();
         renderShiftLog();
+        // Note: Syncing edits is a future enhancement. This only updates the local log.
     }
 
     function deleteEntry(id) {
@@ -318,33 +275,24 @@
 
     function togglePaid(id) {
       const s = shiftLog.find(e => e.id === id);
-      if (s) {
-        s.paid = !s.paid;
-        saveLogs();
-      }
+      if (s) { s.paid = !s.paid; saveLogs(); }
     }
     
     function toggleDarkMode() {
         document.body.classList.toggle('dark-mode');
         settings.darkMode = document.body.classList.contains('dark-mode');
-        // No need to call saveSettings() from here, just update the global object
         localStorage.setItem('workLoggerSettings', JSON.stringify(settings));
     }
     
     function exportCSV() {
       let csv = 'Date,Site,Start Time,End Time,Total Hours,Notes,Paid\n';
-      shiftLog.forEach(s => {
-        const row = [s.date, s.site, formatTime(s.start), formatTime(s.end), s.total, `"${s.notes}"`, s.paid].join(',');
-        csv += row + '\n';
-      });
+      shiftLog.forEach(s => { csv += [s.date, s.site, formatTime(s.start), formatTime(s.end), s.total, `"${s.notes}"`, s.paid].join(',') + '\n'; });
       download('worklog.csv', csv);
     }
 
     function exportText() {
       let txt = 'Work Log Export\n==============\n';
-      shiftLog.forEach(s => {
-        txt += `${s.date} | ${s.site} | ${formatTime(s.start)} - ${formatTime(s.end)} (${s.total}) | Notes: ${s.notes} | ${s.paid ? 'Paid' : 'Unpaid'}\n`;
-      });
+      shiftLog.forEach(s => { txt += `${s.date} | ${s.site} | ${formatTime(s.start)} - ${formatTime(s.end)} (${s.total}) | Notes: ${s.notes} | ${s.paid ? 'Paid' : 'Unpaid'}\n`; });
       download('worklog.txt', txt);
     }
 
@@ -371,7 +319,6 @@
       }
     }
 
-    // --- Initial load ---
     loadData();
     applySettings();
     renderCurrentShiftStatus();
