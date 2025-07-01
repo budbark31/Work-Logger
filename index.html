@@ -84,7 +84,9 @@
 
   <script>
     // --- ⬇️ PASTE YOUR GOOGLE SCRIPT URL HERE ⬇️ ---
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyl1OzSYlgK2MR0JyVL9zMMQF427tCGDweYFirJ0jaGncxO3VSRD1rz5YU_BlJPN2CYg/exec';
+    // Commented out for now
+    // const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyl1OzSYlgK2MR0JyVL9zMMQF427tCGDweYFirJ0jaGncxO3VSRD1rz5YU_BlJPN2CYg/exec';
+    const SCRIPT_URL = ''; // Empty for now to disable Google Sheets integration
     // --- ⬆️ PASTE YOUR GOOGLE SCRIPT URL HERE ⬆️ ---
 
     let currentShift = null;
@@ -137,8 +139,13 @@
       localStorage.setItem('currentShift', JSON.stringify(currentShift));
     }
 
-    // --- NEW: Function to send data to Google Sheets ---
+    // --- Function to send data to Google Sheets (disabled for now) ---
     async function syncShiftToGoogle(shiftData) {
+      // Commented out Google Sheets integration to fix errors
+      console.log('Google Sheets sync disabled. Data stored locally only.');
+      return; // Just return without attempting to sync
+      
+      /* Original code commented out
       if (!SCRIPT_URL.startsWith('https://')) {
         console.warn('Google Script URL is not set. Skipping sync.');
         return;
@@ -157,6 +164,7 @@
         console.error('Google Sync Error:', error);
         alert('Failed to sync shift to Google Sheet. Check console for details.');
       }
+      */
     }
 
     function startShift() {
