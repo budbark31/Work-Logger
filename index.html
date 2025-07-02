@@ -399,9 +399,9 @@
 
   <script>
     // --- ⬇️ PASTE YOUR GOOGLE SCRIPT URL HERE ⬇️ ---
-    // Commented out for now
-    // const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyl1OzSYlgK2MR0JyVL9zMMQF427tCGDweYFirJ0jaGncxO3VSRD1rz5YU_BlJPN2CYg/exec';
-    const SCRIPT_URL = ''; // Empty for now to disable Google Sheets integration
+    // Update the Google Script URL with your deployed script URL
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyl1OzSYlgK2MR0JyVL9zMMQF427tCGDweYFirJ0jaGncxO3VSRD1rz5YU_BlJPN2CYg/exec';
+
     // --- ⬆️ PASTE YOUR GOOGLE SCRIPT URL HERE ⬆️ ---
 
     let currentShift = null;
@@ -462,11 +462,6 @@
 
     // --- Function to send data to Google Sheets (disabled for now) ---
     async function syncShiftToGoogle(shiftData) {
-      // Commented out Google Sheets integration to fix errors
-      console.log('Google Sheets sync disabled. Data stored locally only.');
-      return; // Just return without attempting to sync
-      
-      /* Original code commented out
       if (!SCRIPT_URL.startsWith('https://')) {
         console.warn('Google Script URL is not set. Skipping sync.');
         return;
@@ -475,7 +470,7 @@
       try {
         const response = await fetch(SCRIPT_URL, {
           method: 'POST',
-          mode: 'cors', // Required for cross-origin requests
+          mode: 'cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(shiftData)
         });
@@ -485,7 +480,32 @@
         console.error('Google Sync Error:', error);
         alert('Failed to sync shift to Google Sheet. Check console for details.');
       }
-      */
+    }
+
+    // Add a function to load all shifts from Google Sheets
+    async function loadFromGoogle() {
+      if (!SCRIPT_URL.startsWith('https://')) {
+        alert('Google Sheets sync is not configured.');
+        return;
+      }
+      
+      try {
+        const response = await fetch(SCRIPT_URL + '?action=getAll');
+        const data = await response.json();
+        if (data && data.shifts) {
+          // Confirm before overwriting local data
+          if (confirm('This will replace your local shifts with data from Google Sheets. Continue?')) {
+            shiftLog = data.shifts;
+            saveLogs();
+            renderShiftLog();
+            renderCalendar();
+            alert('Shifts loaded from Google Sheets!');
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load from Google:', error);
+        alert('Failed to load shifts from Google Sheets.');
+      }
     }
 
     function startShift() {
