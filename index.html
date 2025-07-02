@@ -13,6 +13,41 @@
       --border-color: #ddd;
       --shadow-color: rgba(0,0,0,0.1);
       --settings-bg: #fff3cd;
+      --muted-text: #666;
+      --earnings-text: #1e1e1e;
+      --date-total-color: #666;
+    }
+    /* Add this new CSS */
+    .app-logo {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 100;
+    }
+    
+    .app-logo-right {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 100;
+    }
+    
+    .app-logo img, .app-logo-right img {
+      width: 40px;
+      height: auto;
+      border-radius: 8px;
+    }
+    
+    /* For mobile screens */
+    @media screen and (max-width: 600px) {
+      .app-logo img, .app-logo-right img {
+        width: 32px;
+      }
+      
+      h1 {
+        margin-top: 25px; /* Add more space for the title on mobile */
+        font-size: 24px; /* Make title slightly smaller on mobile */
+      }
     }
     body { 
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
@@ -28,6 +63,9 @@
       --border-color: #444;
       --shadow-color: rgba(0,0,0,0.4);
       --settings-bg: #3a3a3c;
+      --muted-text: #b8b8b8;
+      --earnings-text: #f5f5f7;
+      --date-total-color: #b8b8b8;
     }
     h1 { text-align: center; }
     .card { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px var(--shadow-color); margin-bottom: 20px; }
@@ -40,7 +78,10 @@
     .delete { background-color: #ff2d55; color: white; }
     table { width: 100%; border-collapse: collapse; margin-top: 15px; }
     th, td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: left; }
-    th { font-size: 14px; color: #8e8e93; }
+    th { 
+      font-size: 14px; 
+      color: var(--muted-text); 
+    }
     .settings { background: var(--settings-bg); padding: 15px; border-radius: 12px; }
     .settings label { display: block; margin-bottom: 10px; }
     .settings input[type="number"], .settings input[type="checkbox"] { margin-right: 5px; }
@@ -49,15 +90,278 @@
       table thead { display: none; }
       table, table tbody, table tr, table td { display: block; width: 100%; }
       table tr { background: var(--card-bg); border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 4px var(--shadow-color); border: 1px solid var(--border-color); }
-      table td { text-align: right; padding-left: 50%; position: relative; border-bottom: 1px solid var(--border-color); }
+      table td { 
+        text-align: right; 
+        padding-left: 40%; /* Reduced from 50% to prevent text being pushed too far right */
+        padding-right: 10px; /* Add right padding */
+        position: relative; 
+        border-bottom: 1px solid var(--border-color);
+        overflow-wrap: break-word; /* Handle long text */
+        word-wrap: break-word;
+      }
       table td:last-child { border-bottom: none; }
-      table td::before { content: attr(data-label); position: absolute; left: 15px; width: calc(50% - 30px); text-align: left; font-weight: bold; color: var(--text-color); }
+      table td::before { 
+        content: attr(data-label); 
+        position: absolute; 
+        left: 10px; /* Reduced from 15px */
+        width: 35%; /* Reduced from calc(50% - 30px) */
+        text-align: left; 
+        font-weight: bold; 
+        color: var(--text-color); 
+      }
+    }
+    
+    .date-header {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 4px var(--shadow-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .date-info {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .date-total {
+      font-size: 14px;
+      color: var(--date-total-color);
+    }
+    
+    .shifts-container {
+      margin-top: 10px;
+    }
+    
+    .shift-card {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 4px var(--shadow-color);
+    }
+    
+    .shift-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .shift-site {
+      font-weight: bold;
+      font-size: 16px;
+    }
+    
+    .shift-time {
+      font-size: 14px;
+      color: var(--muted-text);
+    }
+    
+    .shift-details {
+      margin-bottom: 10px;
+    }
+    
+    .shift-duration {
+      font-size: 14px;
+      color: var(--text-color);
+    }
+    
+    .shift-notes {
+      font-size: 14px;
+      color: var(--text-color);
+      margin-top: 5px;
+    }
+    
+    .shift-earnings {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .earnings-value {
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--earnings-text);
+    }
+    
+    .paid-status {
+      cursor: pointer;
+      padding: 5px 10px;
+      border-radius: 12px;
+      font-size: 14px;
+      transition: background 0.3s;
+    }
+    
+    .paid-status.is-paid {
+      background: #34c759;
+      color: white;
+    }
+    
+    .paid-status.not-paid {
+      background: #ff3b30;
+      color: white;
+    }
+    
+    .shift-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    
+    .edit, .delete {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.3s;
+    }
+    
+    .edit {
+      background: #007aff;
+      color: white;
+    }
+    
+    .delete {
+      background: #ff2d55;
+      color: white;
+    }
+    
+    .edit:hover {
+      background: #0056b3;
+    }
+    
+    .delete:hover {
+      background: #c0392b;
+    }
+    
+    .unpaid-summary {
+      background: rgba(255, 59, 48, 0.1);
+      border-left: 3px solid #ff3b30;
+      padding: 10px 15px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .unpaid-summary.hidden {
+      display: none;
+    }
+
+    .unpaid-total {
+      font-weight: bold;
+    }
+
+    .unpaid-earnings {
+      font-weight: bold;
+      color: #ff3b30;
+    }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      margin-top: 10px;
+    }
+    
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .calendar-header h3 {
+      margin: 0;
+      text-align: center;
+    }
+    
+    .calendar-header button {
+      padding: 5px 10px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      flex-grow: 0;
+    }
+    
+    .calendar-day {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      padding: 8px;
+      min-height: 80px;
+      position: relative;
+    }
+    
+    .calendar-day.empty {
+      background: transparent;
+      border: 1px dashed var(--border-color);
+    }
+    
+    .calendar-day.today {
+      border: 2px solid #34c759;
+    }
+    
+    .calendar-day.has-shifts {
+      background: var(--card-bg);
+    }
+    
+    .day-number {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      font-size: 14px;
+      color: var(--muted-text);
+    }
+    
+    .day-content {
+      margin-top: 20px;
+      font-size: 14px;
+    }
+    
+    .day-hours {
+      font-weight: bold;
+      margin-bottom: 3px;
+    }
+    
+    .day-earnings {
+      color: var(--earnings-text);
+    }
+
+    /* Make calendar responsive */
+    @media screen and (max-width: 600px) {
+      .calendar {
+        grid-template-columns: repeat(7, 1fr);
+        font-size: 12px;
+      }
+      
+      .calendar-day {
+        padding: 5px;
+        min-height: 60px;
+      }
+      
+      .day-content {
+        margin-top: 15px;
+      }
     }
   </style>
 </head>
 <body>
 
   <h1>Work Logger</h1>
+
+  <div class="app-logo">
+    <img src="Electrical-Transparent-Background.png" alt="Work Logger Logo">
+  </div>
+
+  <div class="app-logo-right">
+    <img src="Electrical-Transparent-Background.png" alt="Work Logger Logo">
+  </div>
 
   <div class="card">
     <div class="controls">
@@ -70,7 +374,18 @@
 
   <div class="card">
     <h2>Shift Log</h2>
+    <div id="unpaidSummary" class="unpaid-summary"></div>
     <div id="shiftLog">Loading...</div>
+  </div>
+
+  <div class="card">
+    <h2>Monthly Calendar</h2>
+    <div class="calendar-header">
+      <button onclick="changeMonth(-1)">◀</button>
+      <h3 id="calendarMonth">July 2025</h3>
+      <button onclick="changeMonth(1)">▶</button>
+    </div>
+    <div id="calendar" class="calendar"></div>
   </div>
 
   <div class="card settings">
@@ -93,6 +408,8 @@
     let shiftLog = [];
     let settings = {};
 
+    let currentCalendarDate = new Date();
+
     function loadData() {
       try {
         const storedShift = localStorage.getItem('currentShift');
@@ -104,6 +421,7 @@
         if (storedLog) {
           const parsedLog = JSON.parse(storedLog);
           shiftLog = Array.isArray(parsedLog) ? parsedLog : [];
+          sortShiftLogByDate(); // Sort entries after loading
         }
       } catch (e) { console.error("Could not parse shiftLog data, resetting.", e); shiftLog = []; }
       
@@ -111,6 +429,9 @@
         const storedSettings = localStorage.getItem('workLoggerSettings');
         settings = storedSettings ? JSON.parse(storedSettings) : { hourlyRate: 0, darkMode: false };
       } catch (e) { console.error("Could not parse settings, resetting.", e); settings = { hourlyRate: 0, darkMode: false }; }
+      
+      // Initialize calendar to current month
+      currentCalendarDate = new Date();
     }
     
     function applySettings() {
@@ -186,8 +507,9 @@
       currentShift.total = `${h}h ${m}m`;
       currentShift.notes = prompt("Add notes for this shift:", "") || '';
       shiftLog.unshift(currentShift);
+      sortShiftLogByDate(); // Sort entries after adding new one
       saveLogs();
-      syncShiftToGoogle(currentShift); // --- MODIFIED: Sync on stop
+      syncShiftToGoogle(currentShift);
       currentShift = null;
       saveCurrent();
       renderCurrentShiftStatus();
@@ -215,8 +537,9 @@
       
       const entry = { id: Date.now(), date, site, start: s.toISOString(), end: e.toISOString(), total: `${h}h ${m}m`, notes: prompt("Notes?") || '', paid: false, tag: '', manual: true };
       shiftLog.unshift(entry);
+      sortShiftLogByDate(); // Sort entries after adding new one
       saveLogs();
-      syncShiftToGoogle(entry); // --- MODIFIED: Sync on manual entry
+      syncShiftToGoogle(entry);
       renderShiftLog();
     }
     
@@ -227,36 +550,136 @@
 
     function renderShiftLog() {
       const container = document.getElementById('shiftLog');
+      const unpaidSummary = document.getElementById('unpaidSummary');
       const rate = parseFloat(document.getElementById('hourlyRate').value || 0);
       
-      if(shiftLog.length === 0) {
+      // Calculate unpaid totals
+      let unpaidHours = 0;
+      let unpaidEarnings = 0;
+      
+      shiftLog.forEach(shift => {
+        if (!shift.paid && shift.total) {
+          const h_match = shift.total.match(/(\d+)h/);
+          const m_match = shift.total.match(/(\d+)m/);
+          const h = h_match ? parseInt(h_match[1]) : 0;
+          const m = m_match ? parseInt(m_match[1]) : 0;
+          const hours = h + m/60;
+          unpaidHours += hours;
+          unpaidEarnings += hours * rate;
+        }
+      });
+      
+      // Show unpaid summary if there are unpaid shifts
+      if (unpaidHours > 0) {
+        unpaidSummary.innerHTML = `
+          <div>
+            <strong>Unpaid Work:</strong> 
+            <span class="unpaid-total">${unpaidHours.toFixed(1)} hours</span>
+          </div>
+          <div class="unpaid-earnings">$${unpaidEarnings.toFixed(2)}</div>
+        `;
+        unpaidSummary.classList.remove('hidden');
+      } else {
+        unpaidSummary.classList.add('hidden');
+      }
+      
+      if (shiftLog.length === 0) {
         container.innerHTML = "<p>No shifts logged yet.</p>";
         return;
       }
       
-      let html = '<table><thead><tr><th>Date</th><th>Site</th><th>Time</th><th>Total</th><th>Paid</th><th>Earnings</th><th>Actions</th></tr></thead><tbody>';
-      shiftLog.forEach(s => {
-        let totalHours = 0;
-        if (s.total) {
+      // Group shifts by date
+      const shiftsByDate = {};
+      shiftLog.forEach(shift => {
+        if (!shiftsByDate[shift.date]) {
+          shiftsByDate[shift.date] = [];
+        }
+        shiftsByDate[shift.date].push(shift);
+      });
+      
+      let html = '';
+      
+      // Loop through dates (newest first)
+      Object.keys(shiftsByDate).sort().reverse().forEach(date => {
+        const shifts = shiftsByDate[date];
+        let dateTotal = 0;
+        let dateEarnings = 0;
+        
+        // Calculate totals for the date
+        shifts.forEach(s => {
+          let hours = 0;
+          if (s.total) {
             const h_match = s.total.match(/(\d+)h/);
             const m_match = s.total.match(/(\d+)m/);
+            const h = h_match ? parseInt(h_match[1]) : 0;
+            const m = m_match ? parseInt(m_match[1]) : 0;
+            hours = h + m/60;
+            dateTotal += hours;
+            dateEarnings += hours * rate;
+          }
+        });
+        
+        // Format the date header
+        const formattedDate = new Date(date + 'T00:00:00').toLocaleDateString(undefined, { 
+          weekday: 'short', 
+          month: 'short', 
+          day: 'numeric' 
+        });
+        
+        // Create date header with summary
+        html += `
+          <div class="date-header">
+            <div class="date-info">
+              <h3>${formattedDate}</h3>
+              <span class="date-total">${dateTotal.toFixed(1)} hours</span>
+            </div>
+            <div class="date-earnings">$${dateEarnings.toFixed(2)}</div>
+          </div>
+          <div class="shifts-container">
+        `;
+        
+        // Add individual shift cards
+        shifts.forEach(shift => {
+          let totalHours = 0;
+          if (shift.total) {
+            const h_match = shift.total.match(/(\d+)h/);
+            const m_match = shift.total.match(/(\d+)m/);
             const hours = h_match ? parseInt(h_match[1]) : 0;
             const mins = m_match ? parseInt(m_match[1]) : 0;
             totalHours = hours + mins / 60;
-        }
-        const earnings = (totalHours * rate).toFixed(2);
+          }
+          const earnings = (totalHours * rate).toFixed(2);
+          
+          html += `
+            <div class="shift-card ${shift.paid ? 'paid' : 'unpaid'}">
+              <div class="shift-header">
+                <div class="shift-site">${shift.site}</div>
+                <div class="shift-time">${formatTime(shift.start)} - ${formatTime(shift.end)}</div>
+              </div>
+              <div class="shift-details">
+                <div class="shift-duration">
+                  <span class="duration-label">Duration</span>
+                  <span class="duration-value">${shift.total || 'N/A'}</span>
+                </div>
+                ${shift.notes ? `<div class="shift-notes">${shift.notes}</div>` : ''}
+                <div class="shift-earnings">
+                  <span class="earnings-value">$${earnings}</span>
+                  <span class="paid-status ${shift.paid ? 'is-paid' : 'not-paid'}" onclick="togglePaid(${shift.id})">
+                    ${shift.paid ? '✓ Paid' : '○ Unpaid'}
+                  </span>
+                </div>
+              </div>
+              <div class="shift-actions">
+                <button class="edit" onclick="editEntry(${shift.id})">Edit</button>
+                <button class="delete" onclick="deleteEntry(${shift.id})">Delete</button>
+              </div>
+            </div>
+          `;
+        });
         
-        html += `<tr>
-          <td data-label="Date">${s.date}</td>
-          <td data-label="Site">${s.site}</td>
-          <td data-label="Time">${formatTime(s.start)} - ${formatTime(s.end)}</td>
-          <td data-label="Total">${s.total || 'N/A'}</td>
-          <td data-label="Paid"><input type="checkbox" ${s.paid ? 'checked' : ''} onchange="togglePaid(${s.id})"></td>
-          <td data-label="Earnings">$${earnings}</td>
-          <td data-label="Actions"><button class='edit' onclick="editEntry(${s.id})">Edit</button> <button class='delete' onclick="deleteEntry(${s.id})">Del</button></td>
-        </tr>`;
+        html += `</div>`;
       });
-      html += '</tbody></table>';
+      
       container.innerHTML = html;
     }
     
@@ -327,11 +750,107 @@
       }
     }
 
+    function sortShiftLogByDate() {
+      // Sort by date (newest first) and then by start time (newest first)
+      shiftLog.sort((a, b) => {
+        const dateComparison = new Date(b.date) - new Date(a.date);
+        if (dateComparison !== 0) return dateComparison;
+        return new Date(b.start) - new Date(a.start);
+      });
+    }
+
+    // --- Calendar Functions ---
+    function renderCalendar() {
+      const calendarEl = document.getElementById('calendar');
+      const monthHeaderEl = document.getElementById('calendarMonth');
+      const rate = parseFloat(document.getElementById('hourlyRate').value || 0);
+      
+      const year = currentCalendarDate.getFullYear();
+      const month = currentCalendarDate.getMonth();
+      
+      // Update month header
+      const monthName = new Date(year, month, 1).toLocaleString('default', { month: 'long' });
+      monthHeaderEl.textContent = `${monthName} ${year}`;
+      
+      // Get first day of month and last day
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      
+      // Get day of week of first day (0 = Sunday, 6 = Saturday)
+      const firstDayOfWeek = firstDay.getDay();
+      
+      // Create days for the calendar
+      let calendarHTML = '';
+      
+      // Add day headers
+      const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      weekdays.forEach(day => {
+        calendarHTML += `<div class="calendar-day-header">${day}</div>`;
+      });
+      
+      // Add empty cells for days before first day of month
+      for (let i = 0; i < firstDayOfWeek; i++) {
+        calendarHTML += `<div class="calendar-day empty"></div>`;
+      }
+      
+      // Group shifts by date for quick lookup
+      const shiftsByDate = {};
+      shiftLog.forEach(shift => {
+        if (!shiftsByDate[shift.date]) {
+          shiftsByDate[shift.date] = [];
+        }
+        shiftsByDate[shift.date].push(shift);
+      });
+      
+      // Add days of month
+      const today = new Date().toISOString().split('T')[0];
+      
+      for (let i = 1; i <= lastDay.getDate(); i++) {
+        const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+        const isToday = date === today;
+        const hasShifts = shiftsByDate[date] && shiftsByDate[date].length > 0;
+        
+        let dayHours = 0;
+        let dayEarnings = 0;
+        
+        if (hasShifts) {
+          shiftsByDate[date].forEach(shift => {
+            if (shift.total) {
+              const h_match = shift.total.match(/(\d+)h/);
+              const m_match = shift.total.match(/(\d+)m/);
+              const h = h_match ? parseInt(h_match[1]) : 0;
+              const m = m_match ? parseInt(m_match[1]) : 0;
+              dayHours += h + m/60;
+            }
+          });
+          dayEarnings = (dayHours * rate).toFixed(2);
+        }
+        
+        calendarHTML += `
+          <div class="calendar-day ${isToday ? 'today' : ''} ${hasShifts ? 'has-shifts' : ''}">
+            <div class="day-number">${i}</div>
+            <div class="day-content">
+              <div class="day-hours">${dayHours.toFixed(1)}h</div>
+              <div class="day-earnings">$${dayEarnings}</div>
+            </div>
+          </div>
+        `;
+      }
+      
+      calendarEl.innerHTML = calendarHTML;
+    }
+    
+    function changeMonth(direction) {
+      currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
+      renderCalendar();
+    }
+
+    // Initial load
     loadData();
     applySettings();
     renderCurrentShiftStatus();
     renderShiftLog();
+    renderCalendar(); // Add this line
   </script>
-
 </body>
 </html>
